@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>管理者画面</h1>
+  </div>
+</section>
+
+<div class="admin-tabs" role="tablist">
+  <button type="button" class="active" data-admin-tab="applications"><i class="ti ti-history" aria-hidden="true"></i>申請・履歴</button>
+  <button type="button" data-admin-tab="employees"><i class="ti ti-users" aria-hidden="true"></i>社員</button>
+  <button type="button" data-admin-tab="departments"><i class="ti ti-building" aria-hidden="true"></i>部</button>
+  <button type="button" data-admin-tab="sections"><i class="ti ti-sitemap" aria-hidden="true"></i>課</button>
+  <button type="button" data-admin-tab="positions"><i class="ti ti-id-badge-2" aria-hidden="true"></i>役職</button>
+  <button type="button" data-admin-tab="application-types"><i class="ti ti-file-settings" aria-hidden="true"></i>申請種別</button>
+</div>
+
+<div data-admin-section="applications">
+  <section class="admin-table-panel" data-table-panel>
+    <div class="section-head">
+      <div>
+        <h2>全申請の状況</h2>
+        <p class="hint mb-0"><span data-visible-count></span> / <span data-total-count></span> 件表示</p>
+      </div>
+    </div>
+    <div class="admin-tools">
+      <label>検索
+        <input data-table-search placeholder="申請番号、申請者、部署、種別、件名、状態で検索">
+      </label>
+    </div>
+    <table data-sort-table>
+      <thead>
+        <tr>
+          <th data-sort data-sort-type="number">No</th>
+          <th data-sort>申請者</th>
+          <th data-sort>所属部</th>
+          <th data-sort>申請種別</th>
+          <th data-sort>件名</th>
+          <th data-sort data-sort-type="number">金額</th>
+          <th data-sort>状態</th>
+          <th data-sort>現在の処理者</th>
+          <th data-sort>申請日時</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in all_applications %}
+          <tr>
+            <td>{{ app.id }}</td>
+            <td>{{ app.applicant.name }}（{{ app.applicant.id }}）</td>
+            <td>{{ app.applicant.department.name }}</td>
+            <td>{{ app.application_type.name }}</td>
+            <td>{{ app.title }}</td>
+            <td data-sort-value="{{ app.amount or 0 }}">{% if app.amount is not none %}{{ "{:,.0f}".format(app.amount) }}円{% else %}-{% endif %}</td>
+            <td><span class="badge">{{ app.status|status_label }}</span></td>
+            <td>{{ app|current_approval_label }}</td>
+            <td>{{ app.created_at }}</td>
+            <td><a href="{{ url_for('main.application_detail', application_id=app.id) }}">詳細・履歴</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="empty table-empty" data-empty-message hidden>一致する申請はありません。</p>
+  </section>
+
+  <section class="admin-table-panel" data-table-panel>
+    <div class="section-head">
+      <div>
+        <h2>全申請の操作履歴</h2>
+        <p class="hint mb-0"><span data-visible-count></span> / <span data-total-count></span> 件表示</p>
+      </div>
+    </div>
+    <div class="admin-tools">
+      <label>検索
+        <input data-table-search placeholder="申請番号、件名、操作者、操作内容、コメントで検索">
+      </label>
+    </div>
+    <table data-sort-table>
+      <thead>
+        <tr>
+          <th data-sort>日時</th>
+          <th data-sort data-sort-type="number">申請No</th>
+          <th data-sort>申請種別</th>
+          <th data-sort>件名</th>
+          <th data-sort>操作者</th>
+          <th data-sort>操作</th>
+          <th data-sort>コメント</th>
+          <th>詳細</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for history in all_histories %}
+          <tr>
+            <td>{{ history.created_at }}</td>
+            <td>{{ history.application_id }}</td>
+            <td>{{ history.application.application_type.name }}</td>
+            <td>{{ history.application.title }}</td>
+            <td>{{ history.actor.name }}（{{ history.actor.id }}）</td>
+            <td>{{ history.action|action_label }}</td>
+            <td>{{ history.comment or "-" }}</td>
+            <td><a href="{{ url_for('main.application_detail', application_id=history.application_id) }}">確認</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="empty table-empty" data-empty-message hidden>一致する履歴はありません。</p>
+  </section>
+</div>
+
+<section class="admin-table-panel" data-table-panel data-admin-section="employees" hidden>
+  <div class="section-head">
+    <div>
+      <h2>社員</h2>
+      <p class="hint mb-0"><span data-visible-count></span> / <span data-total-count></span> 件表示</p>
+    </div>
+    <a class="button" href="{{ url_for('main.admin_employee_new') }}">社員追加</a>
+  </div>
+  <div class="admin-tools">
+    <label>検索
+      <input data-table-search placeholder="社員ID、氏名、部、課、役職で検索">
+    </label>
+  </div>
+  <table data-sort-table>
+    <thead><tr><th data-sort>ID</th><th data-sort>氏名</th><th data-sort>部</th><th data-sort>課</th><th data-sort>役職</th><th data-sort>状態</th><th data-sort>管理者</th><th>操作</th></tr></thead>
+    <tbody>
+      {% for employee in employees %}
+        <tr>
+          <td>{{ employee.id }}</td>
+          <td>{{ employee.name }}</td>
+          <td>{{ employee.department.name }}</td>
+          <td>{{ employee.section.name }}</td>
+          <td>{{ employee.position.name }}</td>
+          <td>{{ "有効" if employee.is_active else "無効" }}</td>
+          <td>{{ "はい" if employee.is_admin else "いいえ" }}</td>
+          <td class="row-actions">
+            <a href="{{ url_for('main.admin_employee_edit', employee_id=employee.id) }}">編集</a>
+            <form method="post" action="{{ url_for('main.admin_employee_delete', employee_id=employee.id) }}">
+              <button class="link-danger" type="submit">削除</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="empty table-empty" data-empty-message hidden>一致する社員はありません。</p>
+</section>
+
+<section class="admin-table-panel" data-table-panel data-admin-section="departments" hidden>
+  <div class="section-head">
+    <div>
+      <h2>部</h2>
+      <p class="hint mb-0"><span data-visible-count></span> / <span data-total-count></span> 件表示</p>
+    </div>
+    <a class="button" href="{{ url_for('main.admin_department_new') }}">部追加</a>
+  </div>
+  <div class="admin-tools">
+    <label>検索
+      <input data-table-search placeholder="部ID、部名、部長社員IDで検索">
+    </label>
+  </div>
+  <table data-sort-table>
+    <thead><tr><th data-sort>ID</th><th data-sort>部名</th><th data-sort>部長社員ID</th><th>操作</th></tr></thead>
+    <tbody>
+      {% for item in departments %}
+        <tr>
+          <td>{{ item.id }}</td>
+          <td>{{ item.name }}</td>
+          <td>{{ item.manager_employee_id or "-" }}</td>
+          <td class="row-actions">
+            <a href="{{ url_for('main.admin_department_edit', department_id=item.id) }}">編集</a>
+            <form method="post" action="{{ url_for('main.admin_department_delete', department_id=item.id) }}">
+              <button class="link-danger" type="submit">削除</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="empty table-empty" data-empty-message hidden>一致する部はありません。</p>
+</section>
+
+<section class="admin-table-panel" data-table-panel data-admin-section="sections" hidden>
+  <div class="section-head">
+    <div>
+      <h2>課</h2>
+      <p class="hint mb-0"><span data-visible-count></span> / <span data-total-count></span> 件表示</p>
+    </div>
+    <a class="button" href="{{ url_for('main.admin_section_new') }}">課追加</a>
+  </div>
+  <div class="admin-tools">
+    <label>検索
+      <input data-table-search placeholder="課ID、課名、所属部、課長社員IDで検索">
+    </label>
+  </div>
+  <table data-sort-table>
+    <thead><tr><th data-sort>ID</th><th data-sort>課名</th><th data-sort>所属部</th><th data-sort>課長社員ID</th><th>操作</th></tr></thead>
+    <tbody>
+      {% for item in sections %}
+        <tr>
+          <td>{{ item.id }}</td>
+          <td>{{ item.name }}</td>
+          <td>{{ item.department.name }}</td>
+          <td>{{ item.manager_employee_id or "-" }}</td>
+          <td class="row-actions">
+            <a href="{{ url_for('main.admin_section_edit', section_id=item.id) }}">編集</a>
+            <form method="post" action="{{ url_for('main.admin_section_delete', section_id=item.id) }}">
+              <button class="link-danger" type="submit">削除</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="empty table-empty" data-empty-message hidden>一致する課はありません。</p>
+</section>
+
+<section class="admin-table-panel" data-table-panel data-admin-section="positions" hidden>
+  <div class="section-head">
+    <div>
+      <h2>役職</h2>
+      <p class="hint mb-0"><span data-visible-count></span> / <span data-total-count></span> 件表示</p>
+    </div>
+    <a class="button" href="{{ url_for('main.admin_position_new') }}">役職追加</a>
+  </div>
+  <div class="admin-tools">
+    <label>検索
+      <input data-table-search placeholder="役職ID、役職名、承認可否で検索">
+    </label>
+  </div>
+  <table data-sort-table>
+    <thead><tr><th data-sort>ID</th><th data-sort>役職名</th><th data-sort data-sort-type="number">承認レベル</th><th data-sort>承認可</th><th>操作</th></tr></thead>
+    <tbody>
+      {% for item in positions %}
+        <tr>
+          <td>{{ item.id }}</td>
+          <td>{{ item.name }}</td>
+          <td>{{ item.approval_level }}</td>
+          <td>{{ "はい" if item.can_approve else "いいえ" }}</td>
+          <td class="row-actions">
+            <a href="{{ url_for('main.admin_position_edit', position_id=item.id) }}">編集</a>
+            <form method="post" action="{{ url_for('main.admin_position_delete', position_id=item.id) }}">
+              <button class="link-danger" type="submit">削除</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="empty table-empty" data-empty-message hidden>一致する役職はありません。</p>
+</section>
+
+<section class="admin-table-panel" data-table-panel data-admin-section="application-types" hidden>
+  <div class="section-head">
+    <div>
+      <h2>申請種別</h2>
+      <p class="hint mb-0"><span data-visible-count></span> / <span data-total-count></span> 件表示</p>
+    </div>
+    <a class="button" href="{{ url_for('main.admin_application_type_new') }}">申請種別追加</a>
+  </div>
+  <div class="admin-tools">
+    <label>検索
+      <input data-table-search placeholder="申請種別ID、名称、承認経路、説明で検索">
+    </label>
+  </div>
+  <table data-sort-table>
+    <thead><tr><th data-sort>ID</th><th data-sort>名称</th><th data-sort>金額</th><th data-sort>対象日</th><th data-sort>承認経路</th><th data-sort>説明</th><th>操作</th></tr></thead>
+    <tbody>
+      {% for item in application_types %}
+        <tr>
+          <td>{{ item.id }}</td>
+          <td>{{ item.name }}</td>
+          <td>{{ "必要" if item.requires_amount else "任意" }}</td>
+          <td>{{ "必要" if item.requires_target_date else "任意" }}</td>
+          <td>
+            {% if item.approval_route_steps %}
+              {% for step in item.approval_route_steps %}{{ step.position.name }}{% if not loop.last %} → {% endif %}{% endfor %}
+            {% else %}
+              標準経路
+            {% endif %}
+          </td>
+          <td>{{ item.description }}</td>
+          <td class="row-actions">
+            <a href="{{ url_for('main.admin_application_type_edit', application_type_id=item.id) }}">編集</a>
+            <form method="post" action="{{ url_for('main.admin_application_type_delete', application_type_id=item.id) }}">
+              <button class="link-danger" type="submit">削除</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="empty table-empty" data-empty-message hidden>一致する申請種別はありません。</p>
+</section>
+
+<script>
+  document.querySelectorAll("[data-admin-tab]").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const target = tab.dataset.adminTab;
+      document.querySelectorAll("[data-admin-tab]").forEach((item) => item.classList.toggle("active", item === tab));
+      document.querySelectorAll("[data-admin-section]").forEach((section) => {
+        section.hidden = section.dataset.adminSection !== target;
+      });
+    });
+  });
+
+  document.querySelectorAll("[data-table-panel]").forEach((panel) => {
+    const table = panel.querySelector("[data-sort-table]");
+    const tbody = table.querySelector("tbody");
+    const search = panel.querySelector("[data-table-search]");
+    const empty = panel.querySelector("[data-empty-message]");
+    const totalCount = panel.querySelector("[data-total-count]");
+    const visibleCount = panel.querySelector("[data-visible-count]");
+    const rows = Array.from(tbody.querySelectorAll("tr"));
+    let sortState = { index: null, direction: "asc" };
+
+    const normalize = (value) => value.trim().toLocaleLowerCase("ja-JP");
+
+    const updateCounts = () => {
+      const visibleRows = rows.filter((row) => !row.hidden).length;
+      totalCount.textContent = rows.length;
+      visibleCount.textContent = visibleRows;
+      empty.hidden = visibleRows !== 0;
+    };
+
+    const applySearch = () => {
+      const keyword = normalize(search.value);
+      rows.forEach((row) => {
+        const rowText = normalize(row.innerText);
+        row.hidden = keyword && !rowText.includes(keyword);
+      });
+      updateCounts();
+    };
+
+    const sortRows = (index, type) => {
+      const direction = sortState.index === index && sortState.direction === "asc" ? "desc" : "asc";
+      sortState = { index, direction };
+      table.querySelectorAll("th[data-sort]").forEach((th) => th.removeAttribute("data-sort-direction"));
+      table.querySelectorAll("th[data-sort]")[index].setAttribute("data-sort-direction", direction);
+
+      const sorted = rows.slice().sort((a, b) => {
+        const rawA = a.children[index].dataset.sortValue ?? a.children[index].innerText.trim();
+        const rawB = b.children[index].dataset.sortValue ?? b.children[index].innerText.trim();
+        const valueA = type === "number" ? Number(rawA) : rawA;
+        const valueB = type === "number" ? Number(rawB) : rawB;
+        const result = type === "number"
+          ? valueA - valueB
+          : rawA.localeCompare(rawB, "ja-JP", { numeric: true, sensitivity: "base" });
+        return direction === "asc" ? result : -result;
+      });
+      sorted.forEach((row) => tbody.appendChild(row));
+      applySearch();
+    };
+
+    search.addEventListener("input", applySearch);
+    table.querySelectorAll("th[data-sort]").forEach((th, index) => {
+      th.tabIndex = 0;
+      th.addEventListener("click", () => sortRows(index, th.dataset.sortType));
+      th.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          sortRows(index, th.dataset.sortType);
+        }
+      });
+    });
+    updateCounts();
+  });
+</script>
+{% endblock %}

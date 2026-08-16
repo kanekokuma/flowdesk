@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <h1>{{ "申請種別編集" if application_type else "申請種別追加" }}</h1>
+</section>
+
+<form method="post" class="form wide">
+  <label>申請種別ID
+    <input name="id" maxlength="20" value="{{ form_values.get('id', application_type.id if application_type else '') }}" required>
+  </label>
+  <label>名称
+    <input name="name" maxlength="50" value="{{ form_values.get('name', application_type.name if application_type else '') }}" required>
+  </label>
+  <label>説明
+    <textarea name="description" rows="4" required>{{ form_values.get('description', application_type.description if application_type else '') }}</textarea>
+  </label>
+  <label class="check-row"><input id="requires-amount" name="requires_amount" type="checkbox" {% if form_values.get('requires_amount') or (not form_values and application_type and application_type.requires_amount) %}checked{% endif %}> 金額入力を必要にする</label>
+  <label class="check-row"><input name="requires_target_date" type="checkbox" {% if form_values.get('requires_target_date') or (not form_values and application_type and application_type.requires_target_date) %}checked{% endif %}> 対象日入力を必要にする</label>
+
+  <section class="route-builder" aria-labelledby="route-builder-title">
+    <div class="section-head">
+      <h2 id="route-builder-title">承認経路</h2>
+      <button id="add-route-step" type="button" class="secondary route-add-button">
+        <i class="ti ti-plus" aria-hidden="true"></i>役職を追加
+      </button>
+    </div>
+    <ol id="route-step-list" class="route-step-list">
+      {% for selected_id in selected_route_position_ids %}
+      <li class="route-builder-step">
+        <span class="route-step-number" aria-hidden="true"></span>
+        <label>
+          <span class="sr-only">承認役職</span>
+          <select name="route_position_id" required>
+            <option value="">役職を選択</option>
+            {% for item in positions %}
+            <option value="{{ item.id }}" {% if item.id == selected_id %}selected{% endif %}>{{ item.name }}（{{ item.id }}）</option>
+            {% endfor %}
+          </select>
+        </label>
+        <div class="route-step-actions">
+          <button type="button" class="route-control move-up" title="1つ前へ移動" aria-label="1つ前へ移動"><i class="ti ti-arrow-up" aria-hidden="true"></i></button>
+          <button type="button" class="route-control move-down" title="1つ後へ移動" aria-label="1つ後へ移動"><i class="ti ti-arrow-down" aria-hidden="true"></i></button>
+          <button type="button" class="route-control remove-step" title="経路から削除" aria-label="経路から削除"><i class="ti ti-trash" aria-hidden="true"></i></button>
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <template id="route-step-template">
+    <li class="route-builder-step">
+      <span class="route-step-number" aria-hidden="true"></span>
+      <label>
+        <span class="sr-only">承認役職</span>
+        <select name="route_position_id" required>
+          <option value="">役職を選択</option>
+          {% for item in positions %}<option value="{{ item.id }}">{{ item.name }}（{{ item.id }}）</option>{% endfor %}
+        </select>
+      </label>
+      <div class="route-step-actions">
+        <button type="button" class="route-control move-up" title="1つ前へ移動" aria-label="1つ前へ移動"><i class="ti ti-arrow-up" aria-hidden="true"></i></button>
+        <button type="button" class="route-control move-down" title="1つ後へ移動" aria-label="1つ後へ移動"><i class="ti ti-arrow-down" aria-hidden="true"></i></button>
+        <button type="button" class="route-control remove-step" title="経路から削除" aria-label="経路から削除"><i class="ti ti-trash" aria-hidden="true"></i></button>
+      </div>
+    </li>
+  </template>
+  <div class="actions">
+    <button type="submit">保存</button>
+    <a class="button secondary-link" href="{{ url_for('main.admin_index') }}">戻る</a>
+  </div>
+</form>
+
+<script>
+(() => {
+  const list = document.getElementById("route-step-list");
+  const template = document.getElementById("route-step-template");
+  const amountRequired = document.getElementById("requires-amount");
+
+  const rows = () => Array.from(list.querySelectorAll(".route-builder-step"));
+
+  const updateRows = () => {
+    const items = rows();
+    items.forEach((row, index) => {
+      const isAccounting = row.querySelector("select").value === "POS006" && amountRequired.checked;
+      row.querySelector(".route-step-number").textContent = index + 1;
+      row.querySelector(".move-up").disabled = index === 0 || isAccounting;
+      row.querySelector(".move-down").disabled = index === items.length - 1 || isAccounting;
+      row.querySelector(".remove-step").disabled = items.length === 1 || isAccounting;
+      row.classList.toggle("accounting-step", isAccounting);
+    });
+  };
+
+  const addRow = (positionId = "") => {
+    const row = template.content.firstElementChild.cloneNode(true);
+    row.querySelector("select").value = positionId;
+    list.appendChild(row);
+    updateRows();
+    return row;
+  };
+
+  const keepAccountingLast = () => {
+    if (!amountRequired.checked) {
+      updateRows();
+      return;
+    }
+    let accountingRow = rows().find((row) => row.querySelector("select").value === "POS006");
+    if (!accountingRow) accountingRow = addRow("POS006");
+    list.appendChild(accountingRow);
+    updateRows();
+  };
+
+  document.getElementById("add-route-step").addEventListener("click", () => {
+    const row = addRow();
+    if (amountRequired.checked) list.insertBefore(row, rows().find((item) => item.querySelector("select").value === "POS006"));
+    updateRows();
+    row.querySelector("select").focus();
+  });
+
+  list.addEventListener("click", (event) => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    const row = button.closest(".route-builder-step");
+    if (button.classList.contains("move-up") && row.previousElementSibling) list.insertBefore(row, row.previousElementSibling);
+    if (button.classList.contains("move-down") && row.nextElementSibling) list.insertBefore(row.nextElementSibling, row);
+    if (button.classList.contains("remove-step")) row.remove();
+    updateRows();
+  });
+
+  list.addEventListener("change", keepAccountingLast);
+  amountRequired.addEventListener("change", keepAccountingLast);
+  if (!rows().length) addRow();
+  keepAccountingLast();
+})();
+</script>
+{% endblock %}

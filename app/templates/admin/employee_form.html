@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>{{ "社員編集" if employee else "社員追加" }}</h1>
+  </div>
+</section>
+
+<form method="post" class="form wide">
+  <label>社員ID
+    <input name="id" maxlength="20" value="{{ employee.id if employee else '' }}" required>
+  </label>
+  <label>氏名
+    <input name="name" maxlength="80" value="{{ employee.name if employee else '' }}" required>
+  </label>
+  <label>メールアドレス
+    <input name="email" type="email" maxlength="120" value="{{ employee.email if employee else '' }}" required>
+  </label>
+  <label>パスワード
+    <input name="password" type="password" minlength="8" maxlength="128" placeholder="{{ '変更する場合のみ入力' if employee else '8文字以上' }}" {% if not employee %}required{% endif %}>
+  </label>
+  <label>部
+    <select name="department_id" required>
+      {% for department in departments %}
+        <option value="{{ department.id }}" {% if employee and employee.department_id == department.id %}selected{% endif %}>{{ department.id }} / {{ department.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>課
+    <select name="section_id" required>
+      {% for section in sections %}
+        <option value="{{ section.id }}" {% if employee and employee.section_id == section.id %}selected{% endif %}>{{ section.id }} / {{ section.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>役職
+    <select name="position_id" required>
+      {% for position in positions %}
+        <option value="{{ position.id }}" {% if employee and employee.position_id == position.id %}selected{% endif %}>{{ position.id }} / {{ position.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="check-row"><input name="is_admin" type="checkbox" {% if employee and employee.is_admin %}checked{% endif %}> 管理者権限を付与する</label>
+  <label class="check-row"><input name="is_active" type="checkbox" {% if not employee or employee.is_active %}checked{% endif %}> 有効な社員として扱う</label>
+  <div class="actions">
+    <button type="submit">保存</button>
+    <a class="button secondary-link" href="{{ url_for('main.admin_index') }}">戻る</a>
+  </div>
+</form>
+{% endblock %}

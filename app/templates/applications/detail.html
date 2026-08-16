@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>申請 #{{ app.id }}</h1>
+    <p>{{ app.application_type.name }} / {{ app.status|status_label }}</p>
+  </div>
+  <div class="actions no-print">
+    {% if can_edit %}
+      <a class="button" href="{{ url_for('main.application_edit', application_id=app.id) }}">{{ "下書きを編集" if app.status == "draft" else "修正して再申請" }}</a>
+    {% endif %}
+    {% if app.applicant_id == user.id and app.status != "draft" %}
+      <form method="post" action="{{ url_for('main.application_template_create', application_id=app.id) }}" class="inline-form">
+        <input name="template_name" type="hidden" value="{{ app.title }}のテンプレート">
+        <button type="submit" class="secondary">テンプレート保存</button>
+      </form>
+    {% endif %}
+    <a class="button secondary-link" href="{{ url_for('main.application_pdf', application_id=app.id) }}" target="_blank" rel="noopener">PDF表示</a>
+    <a class="button secondary-link" href="{{ url_for('main.application_pdf', application_id=app.id, download=1) }}">PDF保存</a>
+  </div>
+</section>
+
+<div class="print-area">
+{% set progress = app|approval_progress %}
+<section>
+  <div class="section-head">
+    <h2>承認進捗</h2>
+    <span class="badge">{{ progress.approved }} / {{ progress.total }} 承認済</span>
+  </div>
+  <div class="progress-bar">
+    <div style="width: {{ progress.percent }}%"></div>
+  </div>
+  <p class="hint">現在の処理者: {{ app|current_approval_label }}</p>
+  {% if app.approval_steps %}
+    <div class="approval-timeline">
+      <div class="timeline-step is-done">
+        <strong>申請</strong>
+        <span>{{ app.applicant.name }}</span>
+      </div>
+      {% for step in app.approval_steps %}
+        <div class="timeline-step is-{{ step.status }}">
+          <strong>{{ step.role_label }}</strong>
+          <span>{{ step.approver.name }}</span>
+          <small>{{ step.status|step_status_label }}</small>
+        </div>
+      {% endfor %}
+      {% if app.status == "approved" %}
+        <div class="timeline-step is-done">
+          <strong>完了</strong>
+          <span>承認完了</span>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+</section>
+
+{% if app.status == "returned" and returned_items %}
+<section class="returned-alert">
+  <div class="section-head">
+    <div>
+      <h2>修正が必要な項目</h2>
+    </div>
+    {% if can_edit %}
+      <a class="button" href="{{ url_for('main.application_edit', application_id=app.id) }}">修正画面へ</a>
+    {% endif %}
+  </div>
+  <div class="returned-field-list">
+    {% for _key, label in returned_items %}
+      <span>{{ label }}</span>
+    {% endfor %}
+  </div>
+  {% set latest_return = app.approval_steps|selectattr("status", "equalto", "returned")|list|last %}
+  {% if latest_return and latest_return.comment %}
+    <p class="body-text returned-comment">{{ latest_return.comment }}</p>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if can_act %}
+<section class="approval-action-panel">
+  <div class="section-head">
+    <div>
+      <h2>あなたの承認判断</h2>
+    </div>
+    <span class="badge action-required">対応が必要</span>
+  </div>
+  <div class="decision-summary">
+    <div><span>申請者</span><strong>{{ app.applicant.name }}</strong></div>
+    <div><span>種別</span><strong>{{ app.application_type.name }}</strong></div>
+    <div><span>金額</span><strong>{% if app.amount is not none %}{{ "{:,.0f}".format(app.amount) }}円{% else %}-{% endif %}</strong></div>
+    <div><span>対象日</span><strong>{{ app.target_date or "-" }}</strong></div>
+  </div>
+  <form method="post" action="{{ url_for('main.approval_act', application_id=app.id) }}" class="approval-form">
+    <label>コメント
+      <textarea name="comment" rows="4" placeholder="承認は任意です。差し戻し・却下の場合は、申請者が次に何を直せばよいか分かるように理由を入力してください。"></textarea>
+    </label>
+    <fieldset class="return-field-picker">
+      <legend>差し戻し時に修正が必要な項目</legend>
+      <div>
+        {% for key, label in review_fields %}
+          <label class="check-row">
+            <input name="return_fields" type="checkbox" value="{{ key }}">
+            {{ label }}
+          </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    <div class="approval-actions">
+      <button name="action" value="approve" class="approve-button" type="submit">承認して次へ進める</button>
+      <button name="action" value="return" class="return-button" type="submit">申請者へ差し戻す</button>
+      <button name="action" value="reject" class="reject-button" type="submit">却下して終了する</button>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+<section class="detail-grid">
+  <div><span>件名</span><strong>{{ app.title }}</strong></div>
+  <div><span>申請者</span><strong>{{ app.applicant.name }}</strong></div>
+  <div><span>金額</span><strong>{% if app.amount is not none %}{{ "{:,.0f}".format(app.amount) }}円{% else %}-{% endif %}</strong></div>
+  <div><span>対象日</span><strong>{{ app.target_date or "-" }}</strong></div>
+</section>
+
+<section>
+  <h2>理由・内容</h2>
+  <p class="body-text">{{ app.reason }}</p>
+</section>
+
+{% set detail_rows = app|detail_items %}
+{% if detail_rows %}
+<section>
+  <h2>{{ app.application_type.name }}の詳細項目</h2>
+  <table>
+    <tbody>
+      {% for label, value in detail_rows %}
+        <tr><th>{{ label }}</th><td>{{ value }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+<section>
+  <h2>承認フロー</h2>
+  <table>
+    <thead><tr><th>順番</th><th>役割</th><th>承認者</th><th>状態</th><th>コメント</th></tr></thead>
+    <tbody>
+      {% for step in app.approval_steps %}
+        <tr>
+          <td>{{ step.step_no }}</td>
+          <td>{{ step.role_label }}</td>
+          <td>{{ step.approver.name }}</td>
+          <td><span class="badge">{{ step.status|step_status_label }}</span></td>
+          <td>{{ step.comment or "" }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>承認履歴</h2>
+  <table>
+    <thead><tr><th>日時</th><th>操作者</th><th>操作</th><th>コメント</th></tr></thead>
+    <tbody>
+      {% for history in app.histories %}
+        <tr>
+          <td>{{ history.created_at }}</td>
+          <td>{{ history.actor.name }}</td>
+          <td>{{ history.action|action_label }}</td>
+          <td>{{ history.comment or "" }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+</div>
+{% endblock %}

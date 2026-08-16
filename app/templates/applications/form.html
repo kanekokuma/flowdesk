@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>{{ "申請編集" if app else "申請作成" }}</h1>
+  </div>
+</section>
+
+{% if app and app.status == "returned" and returned_items %}
+<section class="returned-alert">
+  <div class="section-head">
+    <div>
+      <h2>赤色の項目を修正してください</h2>
+    </div>
+  </div>
+  <div class="returned-field-list">
+    {% for _key, label in returned_items %}
+      <span>{{ label }}</span>
+    {% endfor %}
+  </div>
+  {% set latest_return = app.approval_steps|selectattr("status", "equalto", "returned")|list|last %}
+  {% if latest_return and latest_return.comment %}
+    <p class="body-text returned-comment">{{ latest_return.comment }}</p>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if not app and templates %}
+<section>
+  <h2>テンプレートから作成</h2>
+  <form method="get" class="filter-form">
+    <label>保存済みテンプレート
+      <select name="template">
+        <option value="">選択してください</option>
+        {% for template in templates %}
+          <option value="{{ template.id }}">{{ template.name }} / {{ template.application_type.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="actions">
+      <button type="submit">テンプレートを読み込む</button>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+<form method="post" class="form wide" id="applicationForm">
+  <label>申請種別
+    <select name="application_type_id" required onchange="location.href='{{ url_for('main.application_edit', application_id=app.id) if app else url_for('main.application_new') }}?type=' + this.value">
+      {% for type in application_types %}
+        <option value="{{ type.id }}" {% if selected_type_id == type.id %}selected{% endif %}>{{ type.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <label>件名
+    <input name="title" maxlength="120" value="{{ request.form.get('title', form_values.get('title', app.title if app else '')) }}" required>
+  </label>
+
+  {% if selected_type_id == "APP_TYPE_001" %}
+    <section class="form-section">
+      <h2>経費申請の入力項目</h2>
+      <label>金額
+        <input name="amount" type="number" min="0" step="1" value="{{ request.form.get('amount', form_values.get('amount', app.amount if app and app.amount is not none else '')) }}" required>
+      </label>
+      <label>利用日
+        <input name="expense_date" type="date" value="{{ request.form.get('expense_date', detail_values.get('expense_date', '')) }}" required>
+      </label>
+      <label>費目
+        <select name="expense_category" required>
+          {% for value in ["接待費", "備品費", "出張費", "通信費", "会議費", "その他"] %}
+            <option value="{{ value }}" {% if request.form.get('expense_category', detail_values.get('expense_category', '')) == value %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>支払方法
+        <select name="payment_method" required>
+          {% for value in ["現金", "クレジットカード", "請求書払い", "立替"] %}
+            <option value="{{ value }}" {% if request.form.get('payment_method', detail_values.get('payment_method', '')) == value %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>支払先
+        <input name="vendor" maxlength="120" value="{{ request.form.get('vendor', detail_values.get('vendor', '')) }}">
+      </label>
+      <label>領収書提出状況
+        <select name="receipt_status">
+          {% set selected_receipt_status = request.form.get('receipt_status', detail_values.get('receipt_status', '')) %}
+          {% for value in ["提出済み", "なし", "後日提出"] %}
+            <option value="{{ value }}" {% if selected_receipt_status == value or (selected_receipt_status == "あり" and value == "提出済み") %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>案件・プロジェクトコード
+        <input name="project_code" maxlength="40" value="{{ request.form.get('project_code', detail_values.get('project_code', '')) }}">
+      </label>
+      <label>税区分
+        <select name="tax_category">
+          {% for value in ["課税", "非課税", "不課税", "対象外"] %}
+            <option value="{{ value }}" {% if request.form.get('tax_category', detail_values.get('tax_category', '')) == value %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>費用負担部門
+        {% set selected_cost_department = request.form.get('cost_burden_department', detail_values.get('cost_burden_department', user.department.name)) %}
+        <select name="cost_burden_department" required>
+          {% for department in departments %}
+            <option value="{{ department.name }}" {% if selected_cost_department in [department.id, department.name] %}selected{% endif %}>{{ department.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </section>
+  {% elif selected_type_id == "APP_TYPE_002" %}
+    <section class="form-section">
+      <h2>購買申請の入力項目</h2>
+      <label>金額
+        <input name="amount" type="number" min="0" step="1" value="{{ request.form.get('amount', form_values.get('amount', app.amount if app and app.amount is not none else '')) }}" required>
+      </label>
+      <label>購入品名
+        <input name="item_name" maxlength="120" value="{{ request.form.get('item_name', detail_values.get('item_name', '')) }}" required>
+      </label>
+      <label>数量
+        <input name="quantity" type="number" min="1" step="1" value="{{ request.form.get('quantity', detail_values.get('quantity', '')) }}" required>
+      </label>
+      <label>単価
+        <input name="unit_price" type="number" min="0" step="1" value="{{ request.form.get('unit_price', detail_values.get('unit_price', '')) }}" required>
+      </label>
+      <label>購入先
+        <input name="vendor" maxlength="120" value="{{ request.form.get('vendor', detail_values.get('vendor', '')) }}">
+      </label>
+      <label>希望納期
+        <input name="desired_delivery_date" type="date" value="{{ request.form.get('desired_delivery_date', detail_values.get('desired_delivery_date', '')) }}" required>
+      </label>
+      <label>予算コード
+        <input name="budget_code" maxlength="40" value="{{ request.form.get('budget_code', detail_values.get('budget_code', '')) }}">
+      </label>
+      <label>見積書提出状況
+        <select name="quote_status" required>
+          {% for value in ["提出済み", "取得予定", "不要"] %}
+            <option value="{{ value }}" {% if request.form.get('quote_status', detail_values.get('quote_status', '')) == value %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>購入先選定理由
+        <textarea name="selection_reason" rows="3">{{ request.form.get('selection_reason', detail_values.get('selection_reason', '')) }}</textarea>
+      </label>
+    </section>
+  {% elif selected_type_id == "APP_TYPE_003" %}
+    <section class="form-section">
+      <h2>勤怠申請の入力項目</h2>
+      <label>対象日
+        <input name="target_date" type="date" value="{{ request.form.get('target_date', form_values.get('target_date', app.target_date if app and app.target_date else '')) }}" required>
+      </label>
+      <label>勤怠区分
+        <select name="attendance_type" required>
+          {% for value in ["有休", "残業", "休日出勤", "打刻修正", "遅刻・早退"] %}
+            <option value="{{ value }}" {% if request.form.get('attendance_type', detail_values.get('attendance_type', '')) == value %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>開始時刻
+        <input name="start_time" type="time" value="{{ request.form.get('start_time', detail_values.get('start_time', '')) }}">
+      </label>
+      <label>終了時刻
+        <input name="end_time" type="time" value="{{ request.form.get('end_time', detail_values.get('end_time', '')) }}">
+      </label>
+      <label>振替日
+        <input name="substitute_date" type="date" value="{{ request.form.get('substitute_date', detail_values.get('substitute_date', '')) }}">
+      </label>
+      <label>勤務場所
+        <input name="work_location" maxlength="120" value="{{ request.form.get('work_location', detail_values.get('work_location', '')) }}">
+      </label>
+      <label>緊急連絡事項
+        <textarea name="contact_note" rows="3">{{ request.form.get('contact_note', detail_values.get('contact_note', '')) }}</textarea>
+      </label>
+    </section>
+  {% elif selected_type_id == "APP_TYPE_004" %}
+    <section class="form-section">
+      <h2>稟議申請の入力項目</h2>
+      <label>金額
+        <input name="amount" type="number" min="0" step="1" value="{{ request.form.get('amount', form_values.get('amount', app.amount if app and app.amount is not none else '')) }}" required>
+      </label>
+      <label>稟議区分
+        <select name="proposal_category" required>
+          {% for value in ["契約", "投資", "採用", "価格変更", "外注", "その他"] %}
+            <option value="{{ value }}" {% if request.form.get('proposal_category', detail_values.get('proposal_category', '')) == value %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>稟議内容
+        <textarea name="proposal_content" rows="4" required>{{ request.form.get('proposal_content', detail_values.get('proposal_content', '')) }}</textarea>
+      </label>
+      <label>背景・課題
+        <textarea name="background" rows="3" required>{{ request.form.get('background', detail_values.get('background', '')) }}</textarea>
+      </label>
+      <label>費用内訳
+        <textarea name="cost_breakdown" rows="3">{{ request.form.get('cost_breakdown', detail_values.get('cost_breakdown', '')) }}</textarea>
+      </label>
+      <label>期待効果
+        <textarea name="expected_effect" rows="3" required>{{ request.form.get('expected_effect', detail_values.get('expected_effect', '')) }}</textarea>
+      </label>
+      <label>リスク・懸念点
+        <textarea name="risk_note" rows="3">{{ request.form.get('risk_note', detail_values.get('risk_note', '')) }}</textarea>
+      </label>
+      <label>関係部門
+        {% set selected_related_department = request.form.get('related_department', detail_values.get('related_department', user.department.name)) %}
+        <select name="related_department">
+          <option value="">選択してください</option>
+          {% for department in departments %}
+            <option value="{{ department.name }}" {% if selected_related_department in [department.id, department.name] %}selected{% endif %}>{{ department.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>希望決裁日
+        <input name="desired_decision_date" type="date" value="{{ request.form.get('desired_decision_date', detail_values.get('desired_decision_date', '')) }}" required>
+      </label>
+    </section>
+  {% elif selected_type_id == "APP_TYPE_005" %}
+    <section class="form-section">
+      <h2>交通費申請の入力項目</h2>
+      <label>金額
+        <input name="amount" type="number" min="0" step="1" value="{{ request.form.get('amount', form_values.get('amount', app.amount if app and app.amount is not none else '')) }}" required>
+      </label>
+      <label>利用日
+        <input name="travel_date" type="date" value="{{ request.form.get('travel_date', detail_values.get('travel_date', '')) }}" required>
+      </label>
+      <label>出発地
+        <input name="departure" maxlength="120" value="{{ request.form.get('departure', detail_values.get('departure', '')) }}" required>
+      </label>
+      <label>到着地
+        <input name="arrival" maxlength="120" value="{{ request.form.get('arrival', detail_values.get('arrival', '')) }}" required>
+      </label>
+      <label>交通手段
+        <select name="transportation_type" required>
+          {% for value in ["電車", "バス", "タクシー", "新幹線", "航空機", "その他"] %}
+            <option value="{{ value }}" {% if request.form.get('transportation_type', detail_values.get('transportation_type', '')) == value %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>往復区分
+        <select name="round_trip">
+          {% for value in ["片道", "往復"] %}
+            <option value="{{ value }}" {% if request.form.get('round_trip', detail_values.get('round_trip', '')) == value %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>訪問先
+        <input name="visited_place" maxlength="120" value="{{ request.form.get('visited_place', detail_values.get('visited_place', '')) }}">
+      </label>
+      <label>業務目的
+        <textarea name="business_purpose" rows="3" required>{{ request.form.get('business_purpose', detail_values.get('business_purpose', '')) }}</textarea>
+      </label>
+      <label>領収書提出状況
+        <select name="receipt_status">
+          {% set selected_receipt_status = request.form.get('receipt_status', detail_values.get('receipt_status', '')) %}
+          {% for value in ["提出済み", "なし", "後日提出"] %}
+            <option value="{{ value }}" {% if selected_receipt_status == value or (selected_receipt_status in ["あり", "IC履歴で確認"] and value == "提出済み") %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </section>
+  {% elif selected_type_id == "APP_TYPE_006" %}
+    <section class="form-section">
+      <h2>在宅勤務申請の入力項目</h2>
+      <label>対象日
+        <input name="target_date" type="date" value="{{ request.form.get('target_date', form_values.get('target_date', app.target_date if app and app.target_date else '')) }}" required>
+      </label>
+      <label>在宅勤務日
+        <input name="work_date" type="date" value="{{ request.form.get('work_date', detail_values.get('work_date', app.target_date if app and app.target_date else '')) }}" required>
+      </label>
+      <label>在宅勤務区分
+        <select name="remote_work_type" required>
+          {% for value in ["終日", "午前のみ", "午後のみ", "一部時間帯"] %}
+            <option value="{{ value }}" {% if request.form.get('remote_work_type', detail_values.get('remote_work_type', '')) == value %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>勤務場所
+        <input name="work_location" maxlength="120" value="{{ request.form.get('work_location', detail_values.get('work_location', '自宅')) }}" required>
+      </label>
+      <label>開始時刻
+        <input name="start_time" type="time" value="{{ request.form.get('start_time', detail_values.get('start_time', '09:00')) }}" required>
+      </label>
+      <label>終了時刻
+        <input name="end_time" type="time" value="{{ request.form.get('end_time', detail_values.get('end_time', '18:00')) }}" required>
+      </label>
+      <label>予定業務
+        <textarea name="planned_tasks" rows="4" required>{{ request.form.get('planned_tasks', detail_values.get('planned_tasks', '')) }}</textarea>
+      </label>
+      <label>通信環境
+        <select name="network_environment" required>
+          {% for value in ["自宅回線", "会社貸与回線", "モバイル回線", "その他"] %}
+            <option value="{{ value }}" {% if request.form.get('network_environment', detail_values.get('network_environment', '')) == value %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>緊急連絡先
+        <input name="emergency_contact" maxlength="120" value="{{ request.form.get('emergency_contact', detail_values.get('emergency_contact', '')) }}">
+      </label>
+    </section>
+  {% elif selected_application_type %}
+    {% if selected_application_type.requires_amount or selected_application_type.requires_target_date %}
+    <section class="form-section">
+      <h2>{{ selected_application_type.name }}の入力項目</h2>
+      {% if selected_application_type.requires_amount %}
+      <label>金額
+        <input name="amount" type="number" min="0" step="1" value="{{ request.form.get('amount', form_values.get('amount', app.amount if app and app.amount is not none else '')) }}" required>
+      </label>
+      {% endif %}
+      {% if selected_application_type.requires_target_date %}
+      <label>対象日
+        <input name="target_date" type="date" value="{{ request.form.get('target_date', form_values.get('target_date', app.target_date if app and app.target_date else '')) }}" required>
+      </label>
+      {% endif %}
+    </section>
+    {% endif %}
+  {% endif %}
+
+  <label>理由・補足
+    <textarea name="reason" rows="5" required>{{ request.form.get('reason', form_values.get('reason', app.reason if app else '')) }}</textarea>
+  </label>
+
+  <div class="actions">
+    <button type="submit" name="form_action" value="confirm">{{ "再申請内容を確認" if app and app.status == "returned" else "申請内容を確認" }}</button>
+    <button type="submit" name="form_action" value="draft" class="secondary" formnovalidate>下書き保存</button>
+  </div>
+</form>
+
+<script>
+  const returnedFields = {{ returned_fields|list|tojson }};
+  if (returnedFields.length > 0) {
+    document.querySelectorAll("#applicationForm [name]").forEach((field) => {
+      if (returnedFields.includes(field.name)) {
+        field.classList.add("returned-input");
+        const label = field.closest("label");
+        if (label) {
+          label.classList.add("returned-field");
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}

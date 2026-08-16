@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>通知一覧</h1>
+  </div>
+  <form method="post" action="{{ url_for('main.notifications_read_all') }}">
+    <button type="submit">すべて既読</button>
+  </form>
+</section>
+
+<section>
+  {% if notifications %}
+    <table>
+      <thead><tr><th>状態</th><th>通知内容</th><th>日時</th></tr></thead>
+      <tbody>
+        {% for notification in notifications %}
+          <tr>
+            <td><span class="badge">{{ "未読" if not notification.is_read else "既読" }}</span></td>
+            <td>
+              {% if notification.application_id %}
+                <a href="{{ url_for('main.application_detail', application_id=notification.application_id) }}">{{ notification.message }}</a>
+              {% else %}
+                {{ notification.message }}
+              {% endif %}
+            </td>
+            <td>{{ notification.created_at }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty">通知はありません。</p>
+  {% endif %}
+</section>
+{% endblock %}

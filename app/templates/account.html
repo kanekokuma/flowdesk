@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>アカウント詳細</h1>
+  </div>
+</section>
+
+<section class="detail-grid">
+  <div><span>社員ID</span><strong>{{ user.id }}</strong></div>
+  <div><span>氏名</span><strong>{{ user.name }}</strong></div>
+  <div><span>メールアドレス</span><strong>{{ user.email }}</strong></div>
+  <div><span>部</span><strong>{{ user.department.name }} / {{ user.department.id }}</strong></div>
+  <div><span>課</span><strong>{{ user.section.name }} / {{ user.section.id }}</strong></div>
+  <div><span>役職</span><strong>{{ user.position.name }} / {{ user.position.id }}</strong></div>
+  <div><span>承認権限</span><strong>{{ "あり" if user.position.can_approve else "なし" }}</strong></div>
+  <div><span>管理者権限</span><strong>{{ "あり" if user.is_admin else "なし" }}</strong></div>
+  <div><span>在籍状態</span><strong>{{ "有効" if user.is_active else "無効" }}</strong></div>
+</section>
+
+<div class="metrics">
+  <a class="metric" href="{{ url_for('main.applications') }}">
+    <span>自分の申請</span>
+    <strong>{{ my_count }}</strong>
+  </a>
+  <a class="metric" href="{{ url_for('main.approvals') }}">
+    <span>承認待ち</span>
+    <strong>{{ waiting_count }}</strong>
+  </a>
+</div>
+
+<section>
+  <div class="section-head">
+    <div>
+      <h2>パスワード変更</h2>
+    </div>
+  </div>
+  <form method="post" action="{{ url_for('main.account_password') }}" class="form">
+    <div>
+      <label for="current-password">現在のパスワード</label>
+      <div class="password-field">
+        <input id="current-password" name="current_password" type="password" autocomplete="current-password" required>
+        <button class="password-toggle btn btn-icon" type="button" data-password-toggle aria-controls="current-password" aria-label="パスワードを表示" aria-pressed="false" title="パスワードを表示">
+          <i class="ti ti-eye" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+    <div>
+      <label for="new-password">新しいパスワード</label>
+      <div class="password-field">
+        <input id="new-password" name="new_password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+        <button class="password-toggle btn btn-icon" type="button" data-password-toggle aria-controls="new-password" aria-label="パスワードを表示" aria-pressed="false" title="パスワードを表示">
+          <i class="ti ti-eye" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+    <div>
+      <label for="password-confirmation">新しいパスワード（確認）</label>
+      <div class="password-field">
+        <input id="password-confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+        <button class="password-toggle btn btn-icon" type="button" data-password-toggle aria-controls="password-confirmation" aria-label="パスワードを表示" aria-pressed="false" title="パスワードを表示">
+          <i class="ti ti-eye" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+    <div>
+      <button type="submit">
+        <i class="ti ti-key" aria-hidden="true"></i>
+        パスワードを変更
+      </button>
+    </div>
+  </form>
+</section>
+{% endblock %}

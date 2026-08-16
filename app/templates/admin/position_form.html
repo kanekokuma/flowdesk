@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <h1>{{ "役職編集" if position else "役職追加" }}</h1>
+</section>
+
+<form method="post" class="form wide">
+  <label>役職ID
+    <input name="id" maxlength="20" value="{{ position.id if position else '' }}" required>
+  </label>
+  <label>役職名
+    <input name="name" maxlength="50" value="{{ position.name if position else '' }}" required>
+  </label>
+  <label>承認権限レベル
+    <input name="approval_level" type="number" min="0" step="1" value="{{ position.approval_level if position else 0 }}" required>
+  </label>
+  <label class="check-row"><input name="can_approve" type="checkbox" {% if position and position.can_approve %}checked{% endif %}> 承認者になれる</label>
+  <div class="actions">
+    <button type="submit">保存</button>
+    <a class="button secondary-link" href="{{ url_for('main.admin_index') }}">戻る</a>
+  </div>
+</form>
+{% endblock %}

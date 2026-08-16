@@ -1,0 +1,230 @@
+{% macro nav_link(endpoint, label, icon, active=false, count=0) -%}
+<li class="nav-item pf-v6-c-nav__item">
+  <a class="nav-link pf-v6-c-nav__link {% if active %}active pf-m-current{% endif %}" href="{{ url_for(endpoint) }}">
+    <span class="nav-link-icon"><i class="ti ti-{{ icon }}" aria-hidden="true"></i></span>
+    <span class="nav-link-title">{{ label }}</span>
+    {% if count %}<span class="badge nav-badge">{{ count }}</span>{% endif %}
+  </a>
+</li>
+{%- endmacro %}
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title or "電子申請ワークフロー" }}</title>
+  <script>
+    const applyStoredTheme = () => {
+      const savedTheme = localStorage.getItem("workflowTheme");
+      if (savedTheme) {
+        document.documentElement.dataset.theme = savedTheme;
+      }
+      document.documentElement.dataset.bsTheme = savedTheme === "dark" ? "dark" : "light";
+      document.documentElement.classList.toggle("pf-v6-theme-dark", savedTheme === "dark");
+    };
+    applyStoredTheme();
+
+    window.setWorkflowTheme = (theme) => {
+      if (theme) {
+        document.documentElement.dataset.theme = theme;
+        localStorage.setItem("workflowTheme", theme);
+      } else {
+        document.documentElement.removeAttribute("data-theme");
+        localStorage.removeItem("workflowTheme");
+      }
+      document.documentElement.dataset.bsTheme = theme === "dark" ? "dark" : "light";
+      document.documentElement.classList.toggle("pf-v6-theme-dark", theme === "dark");
+    };
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/patternfly/patternfly.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/tabler-icons/tabler-icons.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='patternfly-6.6.0-3') }}">
+</head>
+<body class="app-body">
+  <div class="app-shell {% if not user %}is-auth{% endif %}">
+    {% if user %}
+      <aside class="app-sidebar" id="appSidebar">
+        <div class="sidebar-brand">
+          <a href="{{ url_for('main.dashboard') }}">
+            <span>WORKFLOW</span>
+            <strong>電子申請ワークフロー</strong>
+          </a>
+          <button class="mobile-sidebar-close" type="button" data-sidebar-close aria-label="メニューを閉じる" title="メニューを閉じる">
+            <i class="ti ti-x" aria-hidden="true"></i>
+          </button>
+        </div>
+        <nav class="pf-v6-c-nav app-navigation" aria-label="メインナビゲーション">
+          <ul class="pf-v6-c-nav__list app-nav-list">
+              {{ nav_link("main.dashboard", "ダッシュボード", "layout-dashboard", request.endpoint == "main.dashboard") }}
+              {{ nav_link("main.application_new", "申請作成", "file-plus", request.endpoint in ["main.application_new", "main.application_edit"]) }}
+              {{ nav_link("main.applications", "自分の申請", "files", request.endpoint in ["main.applications", "main.application_detail"]) }}
+              {{ nav_link("main.approvals", "承認待ち", "checkup-list", request.endpoint == "main.approvals", nav_waiting_count) }}
+              {{ nav_link("main.approval_routes", "承認経路", "route", request.endpoint == "main.approval_routes") }}
+              {{ nav_link("main.notifications", "通知", "bell", request.endpoint == "main.notifications", nav_unread_count) }}
+              <li class="nav-section-label">サポート</li>
+              {{ nav_link("main.account", "アカウント", "user-circle", request.endpoint == "main.account") }}
+              {{ nav_link("main.help_page", "利用ガイド", "help-circle", request.endpoint == "main.help_page") }}
+              {% if user.is_admin %}
+                <li class="nav-section-label">システム管理</li>
+                {{ nav_link("main.admin_index", "管理者画面", "settings", request.endpoint and request.endpoint.startswith("main.admin_")) }}
+              {% endif %}
+          </ul>
+        </nav>
+      </aside>
+      <button class="sidebar-scrim" type="button" data-sidebar-close aria-label="メニューを閉じる"></button>
+    {% endif %}
+
+    <div class="app-workspace">
+      {% if user %}
+        <header class="app-topbar">
+          <button class="mobile-menu-toggle" type="button" data-sidebar-open aria-controls="appSidebar" aria-expanded="false" aria-label="メニューを開く" title="メニューを開く">
+            <i class="ti ti-menu-2" aria-hidden="true"></i>
+          </button>
+          <div class="app-toolbar">
+              <label class="theme-switcher">
+                <i class="ti ti-palette" aria-hidden="true"></i>
+                <span class="visually-hidden">テーマ</span>
+                <select id="themeSelect" class="form-select form-select-sm" aria-label="テーマ選択">
+                  <option value="">ティール</option>
+                  <option value="blue">ブルー</option>
+                  <option value="dark">ダーク</option>
+                </select>
+              </label>
+              <a class="account-chip" href="{{ url_for('main.account') }}">
+                <span class="avatar avatar-sm">{{ user.name[:1] }}</span>
+                <span class="account-chip-copy">
+                  <strong>{{ user.name }}</strong>
+                  <small>{{ user.department.name }} / {{ user.position.name }}</small>
+                </span>
+              </a>
+              <a class="pf-v6-c-button pf-m-secondary logout-button" href="{{ url_for('main.logout') }}">
+                <i class="ti ti-logout" aria-hidden="true"></i>
+                <span>ログアウト</span>
+              </a>
+          </div>
+        </header>
+      {% endif %}
+
+      <div class="app-content">
+        <main class="app-main">
+          {% with messages = get_flashed_messages() %}
+            {% if messages %}
+              <div class="flash-stack">
+                {% for message in messages %}
+                  <div class="pf-v6-c-alert pf-m-info pf-m-inline app-alert" role="status">
+                    <i class="ti ti-info-circle" aria-hidden="true"></i>
+                    <span>{{ message }}</span>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endwith %}
+          {% block content %}{% endblock %}
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const themeSelect = document.getElementById("themeSelect");
+    if (themeSelect) {
+      themeSelect.value = localStorage.getItem("workflowTheme") || "";
+      themeSelect.addEventListener("change", () => {
+        window.setWorkflowTheme(themeSelect.value);
+      });
+    }
+
+    document.querySelectorAll("table").forEach((table) => {
+      table.classList.add("pf-v6-c-table", "pf-m-compact");
+    });
+
+    document.querySelectorAll("button[type='submit'], a.button").forEach((control) => {
+      control.classList.add("pf-v6-c-button");
+      if (control.classList.contains("danger") || control.classList.contains("link-danger")) {
+        control.classList.add("pf-m-danger");
+      } else if (control.classList.contains("secondary") || control.classList.contains("secondary-link")) {
+        control.classList.add("pf-m-secondary");
+      } else {
+        control.classList.add("pf-m-primary");
+      }
+    });
+
+    const sidebarOpenButton = document.querySelector("[data-sidebar-open]");
+    const closeSidebar = () => {
+      document.body.classList.remove("sidebar-open");
+      sidebarOpenButton?.setAttribute("aria-expanded", "false");
+    };
+    sidebarOpenButton?.addEventListener("click", () => {
+      document.body.classList.add("sidebar-open");
+      sidebarOpenButton.setAttribute("aria-expanded", "true");
+    });
+    document.querySelectorAll("[data-sidebar-close]").forEach((button) => {
+      button.addEventListener("click", closeSidebar);
+    });
+    document.querySelectorAll(".app-sidebar .nav-link").forEach((link) => {
+      link.addEventListener("click", closeSidebar);
+    });
+
+    document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+      const input = document.getElementById(button.getAttribute("aria-controls"));
+      const icon = button.querySelector("i");
+      if (!input || !icon) {
+        return;
+      }
+      button.addEventListener("click", () => {
+        const isVisible = input.type === "password";
+        input.type = isVisible ? "text" : "password";
+        const label = isVisible ? "パスワードを非表示" : "パスワードを表示";
+        button.setAttribute("aria-label", label);
+        button.setAttribute("aria-pressed", String(isVisible));
+        button.title = label;
+        icon.classList.toggle("ti-eye", !isVisible);
+        icon.classList.toggle("ti-eye-off", isVisible);
+        input.focus();
+      });
+    });
+  </script>
+  {% if user %}
+    <script>
+      (() => {
+        const timeoutMs = {{ config["SESSION_TIMEOUT_SECONDS"] | int }} * 1000;
+        const keepaliveUrl = {{ url_for("main.session_keepalive") | tojson }};
+        const timeoutUrl = {{ url_for("main.logout", reason="timeout") | tojson }};
+        const keepaliveIntervalMs = 60 * 1000;
+        let timeoutId;
+        let lastKeepaliveAt = Date.now();
+
+        const startTimeout = () => {
+          window.clearTimeout(timeoutId);
+          timeoutId = window.setTimeout(() => {
+            window.location.assign(timeoutUrl);
+          }, timeoutMs);
+        };
+
+        const recordActivity = () => {
+          startTimeout();
+          const now = Date.now();
+          if (now - lastKeepaliveAt < keepaliveIntervalMs) {
+            return;
+          }
+          lastKeepaliveAt = now;
+          fetch(keepaliveUrl, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {"X-Requested-With": "XMLHttpRequest"},
+          }).then((response) => {
+            if (response.redirected || response.status === 401) {
+              window.location.assign(response.url || timeoutUrl);
+            }
+          }).catch(() => {});
+        };
+
+        ["pointerdown", "keydown", "touchstart", "scroll"].forEach((eventName) => {
+          window.addEventListener(eventName, recordActivity, {passive: true});
+        });
+        startTimeout();
+      })();
+    </script>
+  {% endif %}
+</body>
+</html>

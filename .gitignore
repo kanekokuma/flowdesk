@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.DS_Store
+.env
+*.log
+.venv/
+venv/
+instance/
+dist/
+build/
+k8s/secret.yaml

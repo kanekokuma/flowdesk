@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>利用ガイド</h1>
+    <p>目的に合わせて、必要な操作だけ確認できます。</p>
+  </div>
+  <div class="actions">
+    <a class="button" href="{{ url_for('main.application_new') }}">申請を作成</a>
+    <a class="button secondary" href="{{ url_for('main.approval_routes') }}">承認経路を見る</a>
+  </div>
+</section>
+
+<section>
+  <h2>よく使う画面</h2>
+  <div class="help-menu">
+    <a href="{{ url_for('main.application_new') }}">
+      <strong>申請作成</strong>
+      <span>新しい申請を出す</span>
+    </a>
+    <a href="{{ url_for('main.applications') }}">
+      <strong>自分の申請</strong>
+      <span>状況確認・差し戻し修正</span>
+    </a>
+    <a href="{{ url_for('main.approvals') }}">
+      <strong>承認待ち</strong>
+      <span>承認・差し戻し・却下</span>
+    </a>
+    <a href="{{ url_for('main.approval_routes') }}">
+      <strong>承認経路</strong>
+      <span>申請ごとの回り先を確認</span>
+    </a>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div>
+      <h2>一般社員の使い方</h2>
+      <p class="hint mb-0">申請を出す人向けの操作です。</p>
+    </div>
+  </div>
+  <ol class="help-steps">
+    <li>
+      <strong>「申請作成」を開く</strong>
+      <p>申請種別を選ぶと、必要な入力項目が切り替わります。</p>
+    </li>
+    <li>
+      <strong>内容を入力して申請する</strong>
+      <p>件名、理由・補足、申請種別ごとの項目を入力します。</p>
+    </li>
+    <li>
+      <strong>「自分の申請」で状況を見る</strong>
+      <p>申請中、差し戻し、承認完了、却下を確認できます。</p>
+    </li>
+    <li>
+      <strong>差し戻しを修正する</strong>
+      <p>赤色の項目を直して「再申請する」を押します。</p>
+    </li>
+  </ol>
+</section>
+
+<section>
+  <div class="section-head">
+    <div>
+      <h2>承認者の使い方</h2>
+      <p class="hint mb-0">承認を行う人向けの操作です。</p>
+    </div>
+  </div>
+  <ol class="help-steps">
+    <li>
+      <strong>「承認待ち」を開く</strong>
+      <p>自分が対応する申請だけが表示されます。</p>
+    </li>
+    <li>
+      <strong>「確認して操作」を押す</strong>
+      <p>申請内容、詳細項目、承認フロー、履歴を確認します。</p>
+    </li>
+    <li>
+      <strong>承認する</strong>
+      <p>問題がなければ「承認して次へ進める」を押します。</p>
+    </li>
+    <li>
+      <strong>差し戻す</strong>
+      <p>コメントを入力し、不備項目を選んで「申請者へ差し戻す」を押します。</p>
+    </li>
+    <li>
+      <strong>却下する</strong>
+      <p>申請を進めない場合は、コメントを入力して「却下して終了する」を押します。</p>
+    </li>
+  </ol>
+</section>
+
+<section>
+  <div class="section-head">
+    <div>
+      <h2>管理者の使い方</h2>
+      <p class="hint mb-0">管理者画面でマスタデータを管理します。</p>
+    </div>
+  </div>
+  <div class="help-grid">
+    <div class="help-card">
+      <h3>社員管理</h3>
+      <p>社員ID、氏名、所属、役職、管理者権限、有効状態を管理します。</p>
+    </div>
+    <div class="help-card">
+      <h3>組織管理</h3>
+      <p>部、課、部長、課長を管理します。</p>
+    </div>
+    <div class="help-card">
+      <h3>役職管理</h3>
+      <p>承認者になれる役職を管理します。</p>
+    </div>
+    <div class="help-card">
+      <h3>申請種別管理</h3>
+      <p>申請種別、説明、金額・対象日の必要有無を管理します。</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>承認経路の確認方法</h2>
+  <p class="body-text">「承認経路」では、申請種別ごとに誰へ回るかを確認できます。</p>
+  <table>
+    <thead><tr><th>区分</th><th>意味</th><th>例</th></tr></thead>
+    <tbody>
+      <tr><td>部署別</td><td>申請者の所属情報から承認者を決定</td><td>所属課の課長、所属部の部長</td></tr>
+      <tr><td>共通</td><td>部署に関係なく役職から承認者を決定</td><td>経理責任者、購買担当、役員</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>通知とアカウント確認</h2>
+  <div class="help-grid">
+    <div class="help-card">
+      <h3>通知</h3>
+      <p>承認依頼、差し戻し、承認完了などを確認できます。</p>
+    </div>
+    <div class="help-card">
+      <h3>アカウント</h3>
+      <p>自分の社員ID、所属、役職、権限を確認できます。</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

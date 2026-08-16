@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>ダッシュボード</h1>
+    <p>{{ user.name }} / {{ user.department.name }} / {{ user.section.name }} / {{ user.position.name }}</p>
+  </div>
+</section>
+
+<div class="metrics">
+  <a class="metric" href="{{ url_for('main.applications') }}">
+    <span class="metric-heading"><span class="metric-icon"><i class="ti ti-files" aria-hidden="true"></i></span>自分の申請</span>
+    <strong>{{ my_count }}</strong>
+  </a>
+  <a class="metric" href="{{ url_for('main.approvals') }}">
+    <span class="metric-heading"><span class="metric-icon"><i class="ti ti-checkup-list" aria-hidden="true"></i></span>承認待ち</span>
+    <strong>{{ waiting_count }}</strong>
+  </a>
+  <a class="metric" href="{{ url_for('main.applications', status='returned') }}">
+    <span class="metric-heading"><span class="metric-icon"><i class="ti ti-arrow-back-up" aria-hidden="true"></i></span>差し戻し</span>
+    <strong>{{ status_counts.returned }}</strong>
+  </a>
+  <a class="metric" href="{{ url_for('main.applications', status='draft') }}">
+    <span class="metric-heading"><span class="metric-icon"><i class="ti ti-file-pencil" aria-hidden="true"></i></span>下書き</span>
+    <strong>{{ status_counts.draft }}</strong>
+  </a>
+</div>
+
+<section>
+  <h2>次に行う操作</h2>
+  <div class="quick-actions">
+    <a href="{{ url_for('main.application_new') }}"><i class="ti ti-file-plus" aria-hidden="true"></i>新しい申請を作成</a>
+    <a href="{{ url_for('main.applications', status='draft') }}"><i class="ti ti-file-pencil" aria-hidden="true"></i>下書きを再開</a>
+    <a href="{{ url_for('main.approvals') }}"><i class="ti ti-checkup-list" aria-hidden="true"></i>承認待ちを確認</a>
+    <a href="{{ url_for('main.notifications') }}"><i class="ti ti-bell" aria-hidden="true"></i>通知を確認</a>
+  </div>
+</section>
+
+<section>
+  <h2>申請状況</h2>
+  <div class="status-strip">
+    <a href="{{ url_for('main.applications', status='draft') }}">下書き <strong>{{ status_counts.draft }}</strong></a>
+    <a href="{{ url_for('main.applications', status='pending') }}">申請中 <strong>{{ status_counts.pending }}</strong></a>
+    <a href="{{ url_for('main.applications', status='returned') }}">差し戻し <strong>{{ status_counts.returned }}</strong></a>
+    <a href="{{ url_for('main.applications', status='approved') }}">承認完了 <strong>{{ status_counts.approved }}</strong></a>
+    <a href="{{ url_for('main.applications', status='rejected') }}">却下 <strong>{{ status_counts.rejected }}</strong></a>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>最近の申請</h2>
+    <a href="{{ url_for('main.applications') }}">一覧へ</a>
+  </div>
+  {% if recent_applications %}
+    <table>
+      <thead><tr><th>No</th><th>種別</th><th>件名</th><th>状態</th><th>現在の処理者</th><th>操作</th></tr></thead>
+      <tbody>
+        {% for app in recent_applications %}
+          <tr>
+            <td><a href="{{ url_for('main.application_detail', application_id=app.id) }}">#{{ app.id }}</a></td>
+            <td>{{ app.application_type.name }}</td>
+            <td>{{ app.title }}</td>
+            <td><span class="badge">{{ app.status|status_label }}</span></td>
+            <td>{{ app|current_approval_label }}</td>
+            <td>
+              {% if app.status == "draft" %}
+                <a href="{{ url_for('main.application_edit', application_id=app.id) }}">編集して提出</a>
+              {% else %}
+                <a href="{{ url_for('main.application_detail', application_id=app.id) }}">詳細</a>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty">申請はまだありません。</p>
+  {% endif %}
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>通知</h2>
+    <a href="{{ url_for('main.notifications') }}">通知一覧へ</a>
+  </div>
+  {% if notifications %}
+    <ul class="list">
+      {% for notification in notifications %}
+        <li><a href="{{ url_for('main.application_detail', application_id=notification.application_id) }}">{{ notification.message }}</a></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">未読通知はありません。</p>
+  {% endif %}
+</section>
+{% endblock %}

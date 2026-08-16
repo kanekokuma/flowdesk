@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <h1>{{ "課編集" if section else "課追加" }}</h1>
+</section>
+
+<form method="post" class="form wide">
+  <label>課ID
+    <input name="id" maxlength="20" value="{{ section.id if section else '' }}" required>
+  </label>
+  <label>課名
+    <input name="name" maxlength="80" value="{{ section.name if section else '' }}" required>
+  </label>
+  <label>所属部
+    <select name="department_id" required>
+      {% for department in departments %}
+        <option value="{{ department.id }}" {% if section and section.department_id == department.id %}selected{% endif %}>{{ department.id }} / {{ department.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>課長社員ID
+    <select name="manager_employee_id">
+      <option value="">未設定</option>
+      {% for employee in employees %}
+        <option value="{{ employee.id }}" {% if section and section.manager_employee_id == employee.id %}selected{% endif %}>{{ employee.id }} / {{ employee.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <div class="actions">
+    <button type="submit">保存</button>
+    <a class="button secondary-link" href="{{ url_for('main.admin_index') }}">戻る</a>
+  </div>
+</form>
+{% endblock %}

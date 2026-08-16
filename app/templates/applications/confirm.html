@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>申請内容の確認</h1>
+  </div>
+</section>
+
+<section>
+  <h2>確認内容</h2>
+  <table>
+    <tbody>
+      {% for label, value in confirm_items %}
+        <tr>
+          <th>{{ label }}</th>
+          <td class="body-text">{{ value }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <form method="post" class="confirm-actions">
+    {% for key, value in form_values.items() %}
+      <input type="hidden" name="{{ key }}" value="{{ value }}">
+    {% endfor %}
+    <button type="submit" name="form_action" value="submit">{{ submit_label }}</button>
+    <a class="button secondary-link" href="{{ back_url }}">入力画面へ戻る</a>
+  </form>
+</section>
+{% endblock %}

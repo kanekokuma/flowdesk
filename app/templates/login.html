@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-layout">
+  <section class="auth-panel">
+    <div class="auth-heading">
+      <p>WORKFLOW SYSTEM</p>
+      <h1>電子申請ワークフロー</h1>
+      <span>ログイン</span>
+    </div>
+    <form method="post" class="form">
+      <label>社員ID
+        <input name="employee_id" autocomplete="username" autofocus required>
+      </label>
+      <div>
+        <label for="login-password">パスワード</label>
+        <div class="password-field">
+          <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+          <button class="password-toggle btn btn-icon" type="button" data-password-toggle aria-controls="login-password" aria-label="パスワードを表示" aria-pressed="false" title="パスワードを表示">
+            <i class="ti ti-eye" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+      <button type="submit">ログイン</button>
+    </form>
+  </section>
+  </div>
+{% endblock %}

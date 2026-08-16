@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>承認待ち一覧</h1>
+  </div>
+</section>
+
+{% if steps %}
+  <div class="approval-worklist">
+    {% for step in steps %}
+      <section class="approval-card">
+        <div class="approval-card-main">
+          <div>
+            <div class="approval-card-meta">
+              <span class="badge action-required">{{ step.role_label }}として対応</span>
+              <span>{{ step.application.application_type.name }}</span>
+              <span>#{{ step.application.id }}</span>
+            </div>
+            <h2>{{ step.application.title }}</h2>
+            <p class="hint mb-0">申請者: {{ step.application.applicant.name }} / 申請日: {{ step.application.created_at.strftime("%Y-%m-%d") }}</p>
+          </div>
+          <a class="button" href="{{ url_for('main.application_detail', application_id=step.application.id) }}">確認して操作</a>
+        </div>
+        <div class="decision-summary compact">
+          <div><span>金額</span><strong>{% if step.application.amount is not none %}{{ "{:,.0f}".format(step.application.amount) }}円{% else %}-{% endif %}</strong></div>
+          <div><span>対象日</span><strong>{{ step.application.target_date or "-" }}</strong></div>
+          <div><span>状態</span><strong>{{ step.status|step_status_label }}</strong></div>
+        </div>
+      </section>
+    {% endfor %}
+  </div>
+{% else %}
+  <section>
+    <p class="empty mb-0">承認待ちの申請はありません。</p>
+  </section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>承認経路一覧</h1>
+  </div>
+  <a class="button secondary" href="{{ url_for('main.application_new') }}">申請を作成</a>
+</section>
+
+<section>
+  <div class="section-head">
+    <div>
+      <h2>経路の見方</h2>
+    </div>
+  </div>
+  <div class="route-legend">
+    <span class="route-scope scope-local">部署別</span>
+    <span class="route-scope scope-common">共通</span>
+  </div>
+</section>
+
+{% for item in route_catalog %}
+  <section class="route-panel">
+    <div class="section-head">
+      <div>
+        <h2>{{ item.application_type_name }}</h2>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>条件</th>
+          <th>承認経路</th>
+          <th>判定内容</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for condition in item.conditions %}
+          <tr>
+            <td class="fw-bold">{{ condition.condition }}</td>
+            <td>
+              <div class="route-flow">
+                {% for step in condition.steps %}
+                  <span class="route-step">
+                    <span>{{ loop.index }}</span>
+                    {{ step.label }}
+                    <small class="{{ 'scope-local' if step.scope == '部署別' else 'scope-common' }}">{{ step.scope }}</small>
+                  </span>
+                {% endfor %}
+              </div>
+            </td>
+            <td>
+              <ul class="list route-notes">
+                {% for step in condition.steps %}
+                  <li>{{ step.description }}</li>
+                {% endfor %}
+              </ul>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endfor %}
+
+<section>
+  <div class="section-head">
+    <div>
+      <h2>部署別承認者</h2>
+    </div>
+  </div>
+  <div class="columns route-master-columns">
+    <div>
+      <h3>部長マスタ</h3>
+      <table>
+        <thead><tr><th>部ID</th><th>部名</th><th>部長</th></tr></thead>
+        <tbody>
+          {% for department in departments %}
+            <tr>
+              <td>{{ department.id }}</td>
+              <td>{{ department.name }}</td>
+              <td>{{ department.manager_employee_id or "-" }} {{ department.manager_name }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h3>課長マスタ</h3>
+      <table>
+        <thead><tr><th>課ID</th><th>課名</th><th>所属部</th><th>課長</th></tr></thead>
+        <tbody>
+          {% for section in sections %}
+            <tr>
+              <td>{{ section.id }}</td>
+              <td>{{ section.name }}</td>
+              <td>{{ section.department_name }}</td>
+              <td>{{ section.manager_employee_id or "-" }} {{ section.manager_name }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div>
+      <h2>共通承認者</h2>
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr><th>役割</th><th>役職ID</th><th>担当者</th><th>用途</th></tr>
+    </thead>
+    <tbody>
+      {% for role in common_roles %}
+        <tr>
+          <td class="fw-bold">{{ role.label }}</td>
+          <td>{{ role.position_id }}</td>
+          <td>
+            {% if role.approvers %}
+              {% for approver in role.approvers %}
+                <span class="approver-chip">{{ approver.id }} {{ approver.name }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="text-danger">未設定</span>
+            {% endif %}
+          </td>
+          <td>{{ role.description }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}
