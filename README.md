@@ -14,7 +14,6 @@
 - PatternFly 6.6.0
 - Tabler Icons Webfont 3.44.0
 
-PatternFlyとTabler Iconsは `app/static/vendor/` に同梱しているため、画面表示時に外部CDNへ接続する必要はありません。ライブラリの情報とライセンスは同ディレクトリ内の `package.json` または `LICENSE` を参照してください。
 
 初期データには社員、部、課、役職、申請種別のみを登録します。申請データ、承認履歴、通知は初期状態では登録しません。
 
@@ -31,11 +30,9 @@ PatternFlyとTabler Iconsは `app/static/vendor/` に同梱しているため、
 
 ## 構成説明
 
-コンテナ中心のクラウドネイティブ型プライベートクラウド構成については、[PRIVATE_CLOUD.md](PRIVATE_CLOUD.md)を参照してください。
+[PRIVATE_CLOUD.md](PRIVATE_CLOUD.md)を参照してください。
 
 ## 起動方法
-
-初回起動時に `.env.example` から `.env` が作成されます。本番環境へ導入する場合は、`.env` 内の秘密鍵とパスワードを安全な値へ変更してください。`.env` はGitの管理対象外です。
 
 ### Docker Composeで起動
 
@@ -75,9 +72,8 @@ Kubernetes上にデプロイする場合は、以下を実行します。
 ./scripts/status-private-cloud.sh
 ```
 
-## 初期ログインアカウント/初期申請種別設定
-
-以下は動作確認用の初期アカウントです。すべてのパスワードは `password` です。本番導入前に変更してください。
+## 初期データ
+以下は動作確認用の初期アカウントです。すべてのパスワードは `password` です。
 
 | 社員ID | 役割 |
 |---|---|
