@@ -139,8 +139,3 @@ Kubernetes版を最初から作り直す場合:
 ./scripts/reset-k8s.sh
 ./scripts/start-k8s-local.sh
 ```
-
-## 補足
-
-Docker DesktopとOrbStackは、どちらもDocker実行環境として使えます。
-このプロジェクトでは、Docker Compose版でDockerの基本構成を確認し、OrbStack上のDocker環境でMinikubeを起動してKubernetes版を確認します。
