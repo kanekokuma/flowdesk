@@ -1,7 +1,5 @@
 # Minikube / OrbStack デプロイ手順
 
-このディレクトリは、電子申請ワークフローをKubernetes上で動かすための設定です。
-
 ## 構成
 
 - Flaskアプリ: `Deployment/workflow-app`
@@ -25,8 +23,6 @@ http://localhost:5002
 ```
 
 停止する場合は、スクリプトを実行しているターミナルで `Ctrl + C` を押します。
-
-発表時にKubernetes Service経由で見せる場合は、別のターミナルで以下を実行します。
 
 ```bash
 minikube service workflow-app -n workflow-app
@@ -130,8 +126,6 @@ kubectl -n workflow-app logs deployment/workflow-db
 
 ## 初期化し直す場合
 
-MySQLの永続ボリュームを消すと、次回起動時に `db/init.sql` から初期化されます。
-
 ```bash
 ./scripts/reset-k8s.sh
 ./scripts/start-k8s-local.sh
@@ -149,8 +143,6 @@ kubectl apply -f k8s/app.yaml
 
 ## プライベートクラウド上で使う場合
 
-プライベートクラウド上のKubernetesクラスタでも、同じマニフェストを利用できます。
-
 変更が必要になりやすい箇所:
 
 - `k8s/app.yaml` の `image`
@@ -158,7 +150,6 @@ kubectl apply -f k8s/app.yaml
 - `k8s/mysql.yaml` のストレージ容量
 - `.env` から作成するKubernetes Secretの値
 
-コンテナレジストリを使う場合は、アプリイメージをプッシュしてから `image` を差し替えます。
 
 ```bash
 docker build -t <private-registry>/workflow-app:1.0.0 .
